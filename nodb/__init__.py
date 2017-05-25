@@ -1,3 +1,5 @@
+# coding=utf-8
+
 from datetime import datetime
 from io import BytesIO
 
@@ -58,7 +60,12 @@ class NoDB(object):
 
         # Then, store.
         bytesIO = BytesIO()
-        bytesIO.write(serialized)
+
+        # for python2
+        # bytesIO.write(serialized)
+        # for python3
+        bytesIO.write(serialized.encode())
+
         bytesIO.seek(0)
 
         s3_object = s3.Object(self.bucket, self.prefix + real_index)
@@ -82,7 +89,10 @@ class NoDB(object):
         # Next, get the bytes (if any)
         try:
             serialized_s3 = s3.Object(self.bucket, self.prefix + real_index)
-            serialized = serialized_s3.get()["Body"].read()
+            # for Python2
+            # serialized = serialized_s3.get()["Body"].read()
+            # for Python3
+            serialized = serialized_s3.get()["Body"].read().decode()
         except botocore.exceptions.ClientError:
             # No Key? Return None.
             return None
@@ -161,8 +171,10 @@ class NoDB(object):
             if self.serializer != 'pickle':
                 raise Exception("Security exception: Won't unpickle if not set to pickle.")
 
-            # TODO: Python3
-            return_me['obj'] = pickle.loads(base64.b64decode(deserialized['obj']))
+            # This is for Pytyon2
+            # return_me['obj'] = pickle.loads(base64.b64decode(deserialized['obj']))
+            # This is for Python3.  This insn't pretty but works for now
+            return_me['obj'] = pickle.loads(base64.b64decode(deserialized['obj'][2:-1].encode()))
 
         elif deserialized['serializer'] == 'json':
             return_me['obj'] = deserialized['obj']
@@ -186,7 +198,10 @@ class NoDB(object):
 
         index_value = None
         if type(obj) is dict:
-            if obj.has_key(index):
+            # for Python2
+            #if obj.has_key(index):
+            # for Python3
+            if index in obj:
                 index_value = obj[index]
             else:
                 raise Exception("Dict object has no key: " + str(index))
@@ -207,4 +222,7 @@ class NoDB(object):
             # You are on your own here! This may not work!
             return index_value
         else:
-            return self.hash_function(bytes(index_value)).hexdigest()
+            # this is for python2
+            #return self.hash_function(bytes(index_value)).hexdigest()
+            # this is for python3
+            return self.hash_function(index_value.encode()).hexdigest()

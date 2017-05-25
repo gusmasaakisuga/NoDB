@@ -1,3 +1,5 @@
+Quick hack to have this work with Python3.  It might no longer work Python2.
+
 <img src="http://i.imgur.com/ZymFZd8.jpg" width="400"/>
 
 # NoDB
